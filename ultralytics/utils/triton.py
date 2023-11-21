@@ -58,7 +58,8 @@ class TritonRemoteModel:
 
         # Pose model
         if config['parameters'].get('kpt_shape'):
-            self.kpt_shape = [int(x) for x in config['parameters']['kpt_shape'].get('string_value').strip('[]').split(',')]
+            self.kpt_shape = [
+                int(x) for x in config['parameters']['kpt_shape'].get('string_value').strip('[]').split(',')]
 
         if config['parameters'].get('names'):
             self.names = [str(x) for x in config['parameters']['names'].get('string_value').strip('[]').split(',')]
