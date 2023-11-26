@@ -62,7 +62,9 @@ class TritonRemoteModel:
                 int(x) for x in config['parameters']['kpt_shape'].get('string_value').strip('[]').split(',')]
 
         if config['parameters'].get('names'):
-            self.names = [str(x) for x in config['parameters']['names'].get('string_value').strip('[]').split(',')]
+            class_labels = config['parameters']['names'].get('string_value')
+            if class_labels:
+                self.names = [v for k, v in sorted(eval(class_labels).items())]
 
         # Define model attributes
         type_map = {'TYPE_FP32': np.float32, 'TYPE_FP16': np.float16, 'TYPE_UINT8': np.uint8}
