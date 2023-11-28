@@ -63,8 +63,8 @@ class TritonRemoteModel:
 
         if config['parameters'].get('names'):
             names_string = config['parameters']['names'].get('string_value')
-            if names:
-                self.names = [v for k, v in eval(names_string).items()]
+            if names_string:
+                self.names = eval(names_string)
 
         # Define model attributes
         type_map = {'TYPE_FP32': np.float32, 'TYPE_FP16': np.float16, 'TYPE_UINT8': np.uint8}
