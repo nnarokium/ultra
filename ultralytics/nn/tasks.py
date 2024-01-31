@@ -37,6 +37,7 @@ from ultralytics.nn.modules import (
     Pose,
     RepC3,
     RepConv,
+    DRepConv,
     ResNetLayer,
     RTDETRDecoder,
     Segment,
@@ -179,7 +180,7 @@ class BaseModel(nn.Module):
                     m.conv_transpose = fuse_deconv_and_bn(m.conv_transpose, m.bn)
                     delattr(m, "bn")  # remove batchnorm
                     m.forward = m.forward_fuse  # update forward
-                if isinstance(m, RepConv):
+                if isinstance(m, (RepConv, DRepConv)):
                     m.fuse_convs()
                     m.forward = m.forward_fuse  # update forward
             self.info(verbose=verbose)
@@ -785,6 +786,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             DWConvTranspose2d,
             C3x,
             RepC3,
+            DRepConv,
         ):
             c1, c2 = ch[f], args[0]
             if c2 != nc:  # if c2 not equal to number of classes (i.e. for Classify() output)
