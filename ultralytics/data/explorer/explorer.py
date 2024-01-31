@@ -11,6 +11,9 @@ from PIL import Image
 from matplotlib import pyplot as plt
 from pandas import DataFrame
 from tqdm import tqdm
+import io
+import os
+import yaml
 
 from ultralytics.data.augment import Format
 from ultralytics.data.dataset import YOLODataset
@@ -469,3 +472,139 @@ class Explorer:
         TODO
         """
         pass
+
+    def count_labels(self, labels: list) -> dict:
+        """
+        Count occurrences of given labels in dataset.
+
+        Args:
+            labels (list): List of labels to count their occurrences.
+
+        Returns:
+            label_counts (dict): Dictionary containing labels with their count.
+
+        Example:
+            ```python
+            exp = Explorer()
+            exp.create_embeddings_table()
+            filtered_data, label_counts = exp.count_labels(labels)
+            ```
+        """
+        label_counts = {}
+        df = self.table.to_lance().to_table(columns=["labels"]).to_pandas()
+        label_occurances = [l for ls in df["labels"] for l in ls]
+        for label in labels:
+            if label in label_occurances:
+                label_counts[label] = label_occurances.count(label)
+            else:
+                label_counts[label] = 0
+        return label_counts
+
+    def plot_count_labels(self, labels: list) -> np.ndarray:
+        """
+        Plot occurrences of given labels in dataset.
+
+        Args:
+            labels (list): List of labels to count their occurrences.
+        Returns:
+            (numpy.ndarray): Image containing the plot.
+
+        Example:
+            ```python
+            exp = Explorer()
+            exp.create_embeddings_table()
+            img = exp.plot_count_labels(labels)
+            ```
+        """
+        labels_count = self.count_labels(labels)
+        if len(labels_count) == 0:
+            LOGGER.info("No results found.")
+            return None
+
+        plt.xlabel("Labels")
+        plt.ylabel("Count")
+        img = plt.bar(labels_count.keys(), labels_count.values(), color="blue")
+        img_buf = io.BytesIO()
+        plt.savefig(img_buf, format="png")
+        img = np.asarray(Image.open(img_buf))
+        return img
+
+    def count_dataset_labels(self) -> dict:
+        """
+        Count of Occurrences of all labels in dataset.
+
+        Returns:
+            label_counts (dict): Dictionary containing labels with their count.
+
+        Example:
+            ```python
+            exp = Explorer()
+            exp.create_embeddings_table()
+            label_count = exp.dataset_label_count()
+            ```
+        """
+        label_counts = {}
+        dataset_labels = self.table.to_lance().to_table(columns=["labels"]).to_pandas()
+        flatten_labels = [l for ls in dataset_labels["labels"] for l in ls]
+        if os.path.exists(self.data):
+            with open(self.data) as f:
+                my_dict = yaml.safe_load(f)
+        else:
+            with open("ultralytics/cfg/datasets/" + self.data) as f:
+                my_dict = yaml.safe_load(f)
+
+        all_labels = list(my_dict["names"].values())
+
+        for label in all_labels:
+            label_counts[label] = flatten_labels.count(label)
+        return label_counts
+
+    def plot_dataset_labels(self) -> np.ndarray:
+        """
+        Plot occurrences of given labels in dataset.
+
+        Returns:
+            (numpy.ndarray): Image containing the plot of dataset label.
+
+        Example:
+            ```python
+            exp = Explorer()
+            exp.create_embeddings_table()
+            img = exp.plot_count_labels(labels)
+            ```
+        """
+        labels_count = self.count_dataset_labels()
+        if len(labels_count) == 0:
+            LOGGER.info("No results found.")
+            return None
+
+        plt.xlabel("Labels Indexes")
+        plt.ylabel("Count")
+        img = plt.bar(
+            range(len(labels_count.keys())),
+            labels_count.values(),
+            color="blue",
+            width=0.8,
+        )
+        img_buf = io.BytesIO()
+        plt.savefig(img_buf, format="png")
+        img = np.asarray(Image.open(img_buf))
+        return img
+
+    def unique_labels(self) -> list:
+        """
+        List of unique labels present in dataset.
+
+        Returns:
+            (list): list of labels present in dataset.
+
+        Example:
+            ```python
+            exp = Explorer()
+            exp.create_embeddings_table()
+            filtered_df, labels = exp.unique_labels()
+            ```
+        """
+        df_labels = self.table.to_lance().to_table(columns=["labels"]).to_pandas()
+        unique_label = list(set([la for label in df_labels["labels"] for la in label]))  # unique labels
+        return unique_label
